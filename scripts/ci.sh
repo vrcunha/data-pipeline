@@ -3,7 +3,7 @@
 set -euo pipefail
 
 mkdir -p .ci
-COVERAGE_MIN=70
+COVERAGE_MIN=90
 export SPARK_VERSION="${SPARK_VERSION:-3.5}"
 exit_code=0
 
