@@ -25,7 +25,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.15.2"
-poethepoet = "^0.41.0"
 pytest = "^9.0.2"
 coverage = "^7.13.4"
 
@@ -46,35 +45,3 @@ combine-as-imports = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-[tool.poe.tasks.ci]
-help = "Run all ci tools on the code base"
-cmd  = "bash scripts/ci.sh"
-
-[tool.poe.tasks.test]
-help = "Run pytest on code base"
-cmd  = "pytest -v"
-
-[tool.poe.tasks.coverage]
-help = "Run pytest and coverage on code base"
-cmd  = "coverage run --source=data_pipeline -m pytest tests -v -q"
-
-[tool.poe.tasks.coverage_report]
-help = "Run pytest and coverage on code base"
-cmd  = "coverage report -m | tee .ci/coverage.txt"
-
-[tool.poe.tasks.coverage_xml]
-help = "Run pytest and coverage on code base"
-cmd  = "coverage xml -o coverage.xml"
-
-[tool.poe.tasks.coverage_json]
-help = "Run pytest and coverage on code base"
-cmd  = "coverage json -o .ci/coverage.json"
-
-[tool.poe.tasks.lint]
-help = "Run ruff linter on code base"
-cmd  = "ruff check --fix ."
-
-[tool.poe.tasks.format]
-help = "Run ruff fixer on code base"
-cmd  = "ruff format ."
