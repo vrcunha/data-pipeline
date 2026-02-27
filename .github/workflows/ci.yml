@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev
 
-      - name: Run CI script
+      - name: Run script for lint, format and test
         run: poetry run bash scripts/ci.sh
 
       - name: Publish test and coverage summary
@@ -52,40 +52,12 @@ jobs:
             .ci/coverage.json
             .ci/coverage.txt
             .ci/pytest_output.txt
-      
-      - name: Send End Discord alert
+
+      - name: Send Discord alert
+        if: always()
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "DISCORD_WEBHOOK_URL is not configured; skipping Discord alert."
-            exit 0
-          fi
-          REPOSITORY="${{ github.repository }}"
-          WORKFLOW="${{ github.workflow }}"
-          REF_NAME="${{ github.ref_name }}"
-          SHA="${{ github.sha }}"
-          SERVER_URL="${{ github.server_url }}"
-          RUN_ID="${{ github.run_id }}"
-
-          MESSAGE="*[CI END] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
-          export MESSAGE
-          PAYLOAD=$(python - <<'PY'
-          import json
-          import os
-
-          print(json.dumps({"content": os.environ["MESSAGE"]}))
-          PY
-          )
-
-          curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD"
-
-      - name: Send failure Discord alert
-        if: failure()
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           if [ -z "$DISCORD_WEBHOOK_URL" ]; then
             echo "DISCORD_WEBHOOK_URL is not configured; skipping Discord alert."
@@ -99,7 +71,14 @@ jobs:
           SERVER_URL="${{ github.server_url }}"
           RUN_ID="${{ github.run_id }}"
 
-          MESSAGE="*[CI Failure] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+          STATUS_UPPER=$(echo "$JOB_STATUS" | tr '[:lower:]' '[:upper:]')
+          if [ "$JOB_STATUS" = "success" ]; then
+            STATUS_ICON="✅"
+          else
+            STATUS_ICON="❌"
+          fi
+
+          MESSAGE="*${STATUS_ICON} [CI ${STATUS_UPPER}] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nStatus: ${JOB_STATUS}\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
           export MESSAGE
           PAYLOAD=$(python - <<'PY'
           import json
