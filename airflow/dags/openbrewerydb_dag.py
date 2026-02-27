@@ -187,7 +187,7 @@ def brewery_dag():
     register_silver_table = BashOperator(
         task_id=f"register_silver_table__{TABLE_NAME}",
         bash_command=(
-            "bash /opt/spark/jobs/scripts/register_table_trino.sh "
+            "bash /opt/spark/jobs/register_table_trino.sh "
             f"silver {TABLE_NAME}"
         ),
     )
@@ -223,7 +223,7 @@ def brewery_dag():
     register_gold_table = BashOperator(
         task_id=f"register_gold_table__{TABLE_NAME}",
         bash_command=(
-            "bash /opt/spark/jobs/scripts/register_table_trino.sh "
+            "bash /opt/spark/jobs/register_table_trino.sh "
             f"gold {TABLE_NAME}"
         ),
     )

@@ -20,7 +20,7 @@ RUN poetry install --no-root --only main
 
 COPY data_pipeline ./data_pipeline
 COPY .env ./
-COPY jobs/bronze.py ./bronze.py
+COPY scripts/bronze.py ./bronze.py
 
 ENV SPARK_VERSION=3.5
 
