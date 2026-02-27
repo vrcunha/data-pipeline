@@ -82,7 +82,7 @@ jobs:
           REF_NAME="${{ github.ref_name }}"
           SHA="${{ github.sha }}"
 
-          MESSAGE="*[CI END] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+          MESSAGE=$("*[CI END] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}")
           PAYLOAD=$(python - <<'PY'
           import json
           import os
@@ -110,7 +110,7 @@ jobs:
           REF_NAME="${{ github.ref_name }}"
           SHA="${{ github.sha }}"
 
-          MESSAGE="*[CI Failure] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+          MESSAGE=$("*[CI Failure] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}")
           PAYLOAD=$(python - <<'PY'
           import json
           import os
