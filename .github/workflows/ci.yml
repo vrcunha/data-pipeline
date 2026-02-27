@@ -52,6 +52,27 @@ jobs:
             .ci/coverage.json
             .ci/coverage.txt
             .ci/pytest_output.txt
+      
+      - name: Send failure Discord alert
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured; skipping Discord alert."
+            exit 0
+          fi
+          EXPORT MESSAGE=${{ format('**[CI Failure] {0} - {1}**\nJob: lint-format-test\nBranch: {2}\nCommit: {3}\nRun: {4}/{0}/actions/runs/{5}', github.repository, github.workflow, github.ref_name, github.sha, github.server_url, github.run_id) }}
+          PAYLOAD=$(python - <<'PY'
+          import json
+          import os
+
+          print(json.dumps({"content": os.environ["MESSAGE"]}))
+          PY
+          )
+
+          curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
 
       - name: Send failure Discord alert
         if: failure()
