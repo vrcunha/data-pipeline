@@ -143,6 +143,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.ci/
+bucket_data/
 
 # Spyder project settings
 .spyderproject

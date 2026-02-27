@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "homolog"]
+  pull_request:
+
+jobs:
+  lint-format-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pip install poetry==2.1.4
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Run CI script
+        run: poetry run bash scripts/ci.sh
+
+      - name: Publish test and coverage summary
+        if: always()
+        run: |
+          {
+            echo "## Test Summary"
+            echo '```'
+            grep -E '([0-9]+ passed|[0-9]+ failed|ERROR|FAILURES)' .ci/pytest_output.txt || echo "No pytest summary found."
+            echo '```'
+            echo ""
+            echo "## Coverage Report"
+            echo '```'
+            cat .ci/coverage.txt || echo "No coverage report found."
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-artifacts
+          path: |
+            coverage.xml
+            .ci/coverage.json
+            .ci/coverage.txt
+            .ci/pytest_output.txt
+
+      - name: Send failure Discord alert
+        if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          MESSAGE: ${{ format('**[CI Failure] {0} - {1}**\nJob: lint-format-test\nBranch: {2}\nCommit: {3}\nRun: {4}/{0}/actions/runs/{5}', github.repository, github.workflow, github.ref_name, github.sha, github.server_url, github.run_id) }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured; skipping Discord alert."
+            exit 0
+          fi
+
+          PAYLOAD=$(python - <<'PY'
+          import json
+          import os
+
+          print(json.dumps({"content": os.environ["MESSAGE"]}))
+          PY
+          )
+
+          curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
