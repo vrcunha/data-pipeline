@@ -23,13 +23,13 @@ run_step() {
   fi
 }
 
-run_step "Running Ruff lint checks" poetry run poe lint
+run_step "Running Ruff lint checks" poetry run ruff check --fix .
 
-run_step "Running Ruff format" poetry run poe format
+run_step "Running Ruff format" poetry run ruff format .
 
 echo "Running pytest with coverage..."
 set +e
-poetry run poe coverage \
+poetry run coverage run --source=data_pipeline -m pytest tests -v -q \
   2>&1 | tee .ci/pytest_output.txt
 test_exit_code=${PIPESTATUS[0]}
 set -e
@@ -40,11 +40,11 @@ fi
 
 echo "Generating coverage reports..."
 set +e
-poetry run poe coverage_report
+poetry run coverage report -m | tee .ci/coverage.txt
 coverage_report_exit=${PIPESTATUS[0]}
-poetry run poe coverage_xml
+poetry run coverage xml -o coverage.xml
 coverage_xml_exit=$?
-poetry run poe coverage_json
+poetry run coverage json -o .ci/coverage.json
 coverage_json_exit=$?
 set -e
 if [ "${coverage_report_exit}" -ne 0 ] || [ "${coverage_xml_exit}" -ne 0 ] || [ "${coverage_json_exit}" -ne 0 ]; then

@@ -165,6 +165,8 @@ class SilverTransform(Strategy):
         df = df.withColumn("_execution_date", to_date(lit(execution_date)))
 
         df.show(truncate=False)
-        self.logger.info("Silver transform finished", execution_date=execution_date)
+        self.logger.info(
+            "Silver transform finished", execution_date=execution_date
+        )
 
         return df

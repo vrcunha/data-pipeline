@@ -20,7 +20,9 @@ class BronzeQuality(DataQualityStrategy):
         """
         if not isinstance(data, list):
             raise TypeError("Bronze quality expected a list of records.")
-        self.logger.info("Bronze quality validation started", records=len(data))
+        self.logger.info(
+            "Bronze quality validation started", records=len(data)
+        )
 
         if not data:
             raise ValueError("Bronze quality failed: dataset is empty.")
