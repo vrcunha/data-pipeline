@@ -21,12 +21,18 @@ jobs:
       - name: Generate ECHO
         shell: bash
         run: |
-          echo "- REPO: ${{ github.repository }}" 
-          echo "- Workflow: ${{ github.workflow }}"
-          echo "- REF: ${{ github.ref_name }}"
-          echo "- SHA: ${{ github.sha }}"
-          MESSAGE="${{ format('*[CI] {0} - {1}*\nJob: lint-format-test\nBranch: {2}\nCommit: {3}\nRun: {4}/{0}/actions/runs/{5}', github.repository, github.workflow, github.ref_name, github.sha, github.server_url, github.run_id) }}"
-          echo "$MESSAGE"
+          REPOSITORY="${{ github.repository }}"
+          WORKFLOW="${{ github.workflow }}"
+          REF_NAME="${{ github.ref_name }}"
+          SHA="${{ github.sha }}"
+
+          echo "- REPOSITORY: $REPOSITORY" 
+          echo "- WORKFLOW: $WORKFLOW"
+          echo "- REF_NAME: $REF_NAME"
+          echo "- SHA: $SHA"
+
+          MESSAGE="*[CI Failure] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+          echo $MESSAGE
 
       - name: Install Poetry
         run: pip install poetry==2.1.4
@@ -71,8 +77,12 @@ jobs:
             echo "DISCORD_WEBHOOK_URL is not configured; skipping Discord alert."
             exit 0
           fi
+          REPOSITORY="${{ github.repository }}"
+          WORKFLOW="${{ github.workflow }}"
+          REF_NAME="${{ github.ref_name }}"
+          SHA="${{ github.sha }}"
 
-          MESSAGE=${{ format('*[CI End] {0} - {1}*\nJob: lint-format-test\nBranch: {2}\nCommit: {3}\nRun: {4}', ${{ github.repository }}, ${{ github.workflow }}, ${{ github.ref_name }}, ${{ github.sha }}) }}
+          MESSAGE="*[CI END] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
           PAYLOAD=$(python - <<'PY'
           import json
           import os
@@ -95,7 +105,12 @@ jobs:
             exit 0
           fi
 
-          MESSAGE=${{ format('*[CI Failure] {0} - {1}*\nJob: lint-format-test\nBranch: {2}\nCommit: {3}\nRun: {4}', ${{ github.repository }}, ${{ github.workflow }}, ${{ github.ref_name }}, ${{ github.sha }}) }}
+          REPOSITORY="${{ github.repository }}"
+          WORKFLOW="${{ github.workflow }}"
+          REF_NAME="${{ github.ref_name }}"
+          SHA="${{ github.sha }}"
+
+          MESSAGE="*[CI Failure] ${REPOSITORY} - ${WORKFLOW}*\nJob: lint-format-test\nBranch: ${REF_NAME}\nCommit: ${SHA}\nRun: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
           PAYLOAD=$(python - <<'PY'
           import json
           import os
