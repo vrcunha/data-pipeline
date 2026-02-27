@@ -1,6 +1,9 @@
 """Gold load strategy for curated Delta output."""
 
+from typing import Any
+
 from delta.tables import DeltaTable
+from pyspark.sql.functions import coalesce, col, concat_ws, lit, sha2
 
 from data_pipeline.shared.logger import StructuredLogger
 from data_pipeline.strategies.interfaces import Strategy
@@ -9,11 +12,11 @@ from data_pipeline.strategies.interfaces import Strategy
 class GoldLoad(Strategy):
     """Persist gold DataFrame to destination storage with upsert."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-gold-load")
 
-    def execute(self, df, context):
+    def execute(self, df: Any, context: dict[str, Any]) -> None:
         """Upsert gold data into a Delta table.
 
         Args:
@@ -34,6 +37,21 @@ class GoldLoad(Strategy):
             upsert_keys=upsert_keys,
         )
 
+        df = df.withColumn(
+            "gold_hashkey",
+            sha2(
+                concat_ws(
+                    "||",
+                    col("aggregation_level"),
+                    coalesce("country", lit("__NULL__")),
+                    coalesce("state", lit("__NULL__")),
+                    coalesce("city", lit("__NULL__")),
+                    col("brewery_type"),
+                    col("metric_name"),
+                ),
+                256,
+            ),
+        )
         missing_keys = [key for key in upsert_keys if key not in df.columns]
         if missing_keys:
             raise ValueError(
@@ -41,6 +59,7 @@ class GoldLoad(Strategy):
             )
 
         target_path = f"s3a://{destination_bucket}/{destination_path}"
+
         merge_condition = " AND ".join(
             [f"target.`{key}` <=> source.`{key}`" for key in upsert_keys]
         )

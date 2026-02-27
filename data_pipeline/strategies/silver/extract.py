@@ -1,5 +1,7 @@
 """Silver extraction strategy for reading bronze data from object storage."""
 
+from typing import Any
+
 from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from data_pipeline.shared.logger import StructuredLogger
@@ -9,11 +11,11 @@ from data_pipeline.strategies.interfaces import Strategy
 class SilverExtract(Strategy):
     """Extract silver input data from bronze JSON files."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-silver-extract")
 
-    def execute(self, context):
+    def execute(self, context: dict[str, Any]) -> Any:
         """Read bronze data into a Spark DataFrame with schema enforcement.
 
         Args:

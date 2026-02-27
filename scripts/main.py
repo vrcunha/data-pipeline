@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from typing import Any
 
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
@@ -12,7 +13,9 @@ from data_pipeline.strategies.registry import StrategyRegistry
 load_dotenv()
 
 
-def load_context(context: dict, spark: SparkSession) -> dict:
+def load_context(
+    context: dict[str, Any], spark: SparkSession
+) -> dict[str, Any]:
     """Attach Spark session to the runtime context.
 
     Args:

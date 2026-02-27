@@ -19,12 +19,11 @@ from airflow.models import Variable
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.ecs import EcsRunTaskOperator
-from airflow.providers.amazon.aws.operators.glue import (
+from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+from airflow.providers.amazon.aws.operators.glue_crawler import (
     GlueCrawlerOperator,
-    GlueJobOperator,
 )
 from include.scripts.aws_dag_base import (
-    aws_infra_health_check,
     parse_json_string_list,
     validate_aws_runtime_config,
 )
@@ -106,7 +105,7 @@ GOLD_CONTEXT = json.dumps(
         "source_path": f"{TABLE_NAME}/",
         "destination_bucket": AWS_S3_GOLD_BUCKET,
         "destination_path": f"{TABLE_NAME}/",
-        "upsert_keys": ["state", "city", "brewery_type"],
+        "upsert_keys": ["gold_hashkey"],
     }
 )
 
@@ -152,7 +151,7 @@ default_args = {
     ),
     tags=["aws", "bronze", "silver", "gold", "lakehouse", TABLE_NAME],
 )
-def openbrewerydb_aws_dag():
+def openbrewerydb_aws_dag() -> None:
     """Build the AWS lakehouse DAG graph and task dependencies."""
     dag.doc_md = __doc__
 
@@ -166,16 +165,6 @@ def openbrewerydb_aws_dag():
             "required": REQUIRED_VARIABLES,
             "ecs_subnet_ids": AWS_ECS_SUBNET_IDS,
         },
-    )
-
-    infra_health = PythonOperator(
-        task_id="infra_health_check",
-        python_callable=partial(
-            aws_infra_health_check,
-            region_name=AWS_REGION,
-            ecs_cluster_name=AWS_ECS_CLUSTER_NAME,
-            webhook_url=DISCORD_WEBHOOK_URL,
-        ),
     )
 
     bronze = EcsRunTaskOperator(
@@ -254,7 +243,7 @@ def openbrewerydb_aws_dag():
         config={"Name": AWS_GLUE_CRAWLER_GOLD},
     )
 
-    start >> validate_config >> infra_health >> bronze >> silver >> gold >> end
+    start >> validate_config >> bronze >> silver >> gold >> end
     silver >> silver_crawler
     gold >> gold_crawler
 

@@ -2,6 +2,7 @@
 
 import asyncio
 import math
+from typing import Any
 
 import aiohttp
 import backoff
@@ -14,9 +15,9 @@ from data_pipeline.strategies.interfaces import Strategy
 class BronzeAsyncAPIExtract(Strategy):
     """Extract brewery records asynchronously from OpenBreweryDB."""
 
-    default_per_page = 200
+    default_per_page: int = 200
 
-    def __init__(self, concurrency: int = 5):
+    def __init__(self, concurrency: int = 5) -> None:
         """Create extractor with bounded concurrency.
 
         Args:
@@ -31,7 +32,12 @@ class BronzeAsyncAPIExtract(Strategy):
         max_tries=5,
         jitter=backoff.full_jitter,
     )
-    async def _fetch(self, session, url, params):
+    async def _fetch(
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        params: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """Fetch one page from the API with retry support.
 
         Args:
@@ -48,7 +54,12 @@ class BronzeAsyncAPIExtract(Strategy):
                 response.raise_for_status()
                 return await response.json()
 
-    async def _gather_pages(self, url, base_params, total_pages):
+    async def _gather_pages(
+        self,
+        url: str,
+        base_params: dict[str, Any],
+        total_pages: int,
+    ) -> list[dict[str, Any]]:
         """Request all pages concurrently and flatten results.
 
         Args:
@@ -70,7 +81,7 @@ class BronzeAsyncAPIExtract(Strategy):
             responses = await asyncio.gather(*tasks)
             return [item for sublist in responses for item in sublist]
 
-    def get_total_pages(self, url):
+    def get_total_pages(self, url: str) -> int:
         """Compute total pages from the metadata endpoint.
 
         Args:
@@ -90,7 +101,7 @@ class BronzeAsyncAPIExtract(Strategy):
 
         return math.ceil(total_entries / self.default_per_page)
 
-    def execute(self, context):
+    def execute(self, context: dict[str, Any]) -> list[dict[str, Any]]:
         """Run extraction for all API pages.
 
         Args:

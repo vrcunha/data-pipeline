@@ -64,7 +64,7 @@ GOLD_CONTEXT = json.dumps(
         "source_path": f"{TABLE_NAME}/",
         "destination_bucket": "gold",
         "destination_path": f"{TABLE_NAME}/",
-        "upsert_keys": ["state", "city", "brewery_type"],
+        "upsert_keys": ["gold_hashkey"],
     }
 )
 LOCAL_TZ = pendulum.timezone("America/Sao_Paulo")
@@ -114,7 +114,7 @@ default_args = {
     ),
     tags=["bronze", "silver", "gold", "lakehouse", TABLE_NAME],
 )
-def brewery_dag():
+def brewery_dag() -> None:
     """Build the OpenBreweryDB DAG graph and task dependencies."""
     dag.doc_md = __doc__
 
@@ -187,8 +187,7 @@ def brewery_dag():
     register_silver_table = BashOperator(
         task_id=f"register_silver_table__{TABLE_NAME}",
         bash_command=(
-            "bash /opt/spark/jobs/register_table_trino.sh "
-            f"silver {TABLE_NAME}"
+            f"bash /opt/spark/jobs/register_table_trino.sh silver {TABLE_NAME}"
         ),
     )
 
@@ -223,8 +222,7 @@ def brewery_dag():
     register_gold_table = BashOperator(
         task_id=f"register_gold_table__{TABLE_NAME}",
         bash_command=(
-            "bash /opt/spark/jobs/register_table_trino.sh "
-            f"gold {TABLE_NAME}"
+            f"bash /opt/spark/jobs/register_table_trino.sh gold {TABLE_NAME}"
         ),
     )
 

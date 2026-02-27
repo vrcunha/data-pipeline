@@ -2,12 +2,13 @@
 
 import json
 import logging
+from typing import Any
 
 
 class StructuredLogger:
     """Emit JSON-formatted logs with consistent severity fields."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         """Create a logger instance.
 
         Args:
@@ -22,7 +23,7 @@ class StructuredLogger:
 
         self.logger.addHandler(handler)
 
-    def info(self, message: str, **kwargs):
+    def info(self, message: str, **kwargs: Any) -> None:
         """Log an informational event.
 
         Args:
@@ -32,7 +33,7 @@ class StructuredLogger:
         log_entry = {"level": "INFO", "message": message, **kwargs}
         self.logger.info(json.dumps(log_entry))
 
-    def error(self, message: str, **kwargs):
+    def error(self, message: str, **kwargs: Any) -> None:
         """Log an error event.
 
         Args:
@@ -42,7 +43,7 @@ class StructuredLogger:
         log_entry = {"level": "ERROR", "message": message, **kwargs}
         self.logger.error(json.dumps(log_entry))
 
-    def warning(self, message: str, **kwargs):
+    def warning(self, message: str, **kwargs: Any) -> None:
         """Log a warning event.
 
         Args:

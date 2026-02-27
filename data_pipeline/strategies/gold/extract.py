@@ -1,5 +1,7 @@
 """Gold extraction strategy for reading silver Delta tables."""
 
+from typing import Any
+
 from data_pipeline.shared.logger import StructuredLogger
 from data_pipeline.strategies.interfaces import Strategy
 
@@ -7,11 +9,11 @@ from data_pipeline.strategies.interfaces import Strategy
 class GoldExtract(Strategy):
     """Extract input data for the gold layer."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-gold-extract")
 
-    def execute(self, context):
+    def execute(self, context: dict[str, Any]) -> Any:
         """Load silver Delta dataset from object storage.
 
         Args:

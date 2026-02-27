@@ -1,5 +1,7 @@
 """Silver load strategy for Delta table persistence."""
 
+from typing import Any
+
 from data_pipeline.shared.logger import StructuredLogger
 from data_pipeline.strategies.interfaces import Strategy
 
@@ -7,11 +9,11 @@ from data_pipeline.strategies.interfaces import Strategy
 class SilverLoad(Strategy):
     """Persist silver DataFrame to Delta format."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-silver-load")
 
-    def execute(self, df, context):
+    def execute(self, df: Any, context: dict[str, Any]) -> None:
         """Write silver data to object storage in Delta format.
 
         Args:

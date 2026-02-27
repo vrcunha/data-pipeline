@@ -1,5 +1,7 @@
 """Silver data quality rules powered by PyDeequ."""
 
+from typing import Any
+
 from pydeequ.checks import Check, CheckLevel, ConstrainableDataTypes
 from pydeequ.verification import VerificationResult, VerificationSuite
 
@@ -10,11 +12,11 @@ from data_pipeline.strategies.interfaces import DataQualityStrategy
 class SilverQuality(DataQualityStrategy):
     """Validate silver dataset integrity and types."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-silver-quality")
 
-    def validate(self, data, context: dict) -> None:
+    def validate(self, data: Any, context: dict[str, Any]) -> None:
         """Run silver-level quality checks and fail on critical issues.
 
         Args:

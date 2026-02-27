@@ -1,5 +1,8 @@
 """Unit tests for gold strategies."""
 
+from __future__ import annotations
+
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +15,7 @@ from data_pipeline.strategies import (
 )
 
 
-def test_gold_extract_reads_delta_from_s3a():
+def test_gold_extract_reads_delta_from_s3a() -> None:
     """Ensure gold extract reads Delta dataset from expected path."""
     strategy = GoldExtract()
     df_mock = MagicMock()
@@ -33,23 +36,31 @@ def test_gold_extract_reads_delta_from_s3a():
     assert result is df_mock
 
 
-def test_gold_transform_groups_and_orders():
-    """Ensure gold transform returns grouped and ordered DataFrame."""
+def test_gold_transform_groups_and_orders() -> None:
+    """Ensure gold transform builds the expected chained operations."""
     strategy = GoldTransform()
     df_mock = MagicMock()
     grouped = MagicMock()
     aggregated = MagicMock()
-    ordered = MagicMock()
+    with_column = MagicMock()
+    combined = MagicMock()
+    final_df = MagicMock()
+
     df_mock.groupBy.return_value = grouped
     grouped.agg.return_value = aggregated
-    aggregated.orderBy.return_value = ordered
+    aggregated.withColumn.return_value = with_column
+    with_column.unionByName.return_value = combined
+    combined.unionByName.return_value = combined
+    combined.withColumn.return_value = combined
+    combined.drop.return_value = final_df
 
     result = strategy.execute(df_mock, {})
 
-    assert result is ordered
+    assert result is final_df
+    assert df_mock.groupBy.call_count >= 1
 
 
-def test_gold_load_writes_delta_on_first_run():
+def test_gold_load_writes_delta_on_first_run() -> None:
     """Ensure gold load writes Delta table when target does not exist."""
     strategy = GoldLoad()
     spark_mock = MagicMock()
@@ -58,6 +69,7 @@ def test_gold_load_writes_delta_on_first_run():
     writer.mode.return_value = writer
     df_mock = MagicMock()
     df_mock.columns = ["state", "city", "brewery_type", "brewery_count"]
+    df_mock.withColumn.return_value = df_mock
     df_mock.write = writer
     context = {
         "spark": spark_mock,
@@ -75,12 +87,13 @@ def test_gold_load_writes_delta_on_first_run():
     writer.save.assert_called_once_with("s3a://gold/openbrewerydb/")
 
 
-def test_gold_load_merges_when_target_exists():
+def test_gold_load_merges_when_target_exists() -> None:
     """Ensure gold load performs merge upsert when Delta table exists."""
     strategy = GoldLoad()
     spark_mock = MagicMock()
     df_mock = MagicMock()
     df_mock.columns = ["state", "city", "brewery_type", "brewery_count"]
+    df_mock.withColumn.return_value = df_mock
     source_alias = MagicMock()
     df_mock.alias.return_value = source_alias
 
@@ -112,21 +125,21 @@ def test_gold_load_merges_when_target_exists():
     merge_builder.execute.assert_called_once()
 
 
-def test_gold_quality_raises_on_failed_checks():
+def test_gold_quality_raises_on_failed_checks() -> None:
     """Ensure gold quality raises when checks report failure."""
     strategy = GoldQuality()
 
     class _FailedSuite:
-        def __init__(self, spark):
+        def __init__(self, spark: Any) -> None:
             self.spark = spark
 
-        def onData(self, data):
+        def onData(self, data: Any) -> "_FailedSuite":
             return self
 
-        def addCheck(self, check):
+        def addCheck(self, check: Any) -> "_FailedSuite":
             return self
 
-        def run(self):
+        def run(self) -> Any:
             class _Result:
                 status = "Error"
 

@@ -1,6 +1,7 @@
 """Silver transform strategy with normalization and type handling."""
 
 import unicodedata
+from typing import Any
 
 from pyspark.sql.functions import (
     col,
@@ -17,11 +18,11 @@ from data_pipeline.strategies.interfaces import Strategy
 
 
 class SilverTransform(Strategy):
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-silver-transform")
 
-    def treat_string_cols(self, df, cols):
+    def treat_string_cols(self, df: Any, cols: list[str]) -> Any:
         """Normalize text columns using trim and title-case transformation.
 
         Args:
@@ -35,7 +36,7 @@ class SilverTransform(Strategy):
             df = df.withColumn(c, initcap(trim(col(c))))
         return df
 
-    def treat_integer_cols(self, df, cols):
+    def treat_integer_cols(self, df: Any, cols: list[str]) -> Any:
         """Validate and cast columns to integer values.
 
         Args:
@@ -55,7 +56,7 @@ class SilverTransform(Strategy):
             )
         return df
 
-    def treat_float_cols(self, df, cols):
+    def treat_float_cols(self, df: Any, cols: list[str]) -> Any:
         """Validate and cast columns to floating-point values.
 
         Args:
@@ -78,7 +79,7 @@ class SilverTransform(Strategy):
             )
         return df
 
-    def normalize_columns_names(self, df):
+    def normalize_columns_names(self, df: Any) -> Any:
         """Normalize DataFrame column names to lowercase snake case.
 
         Args:
@@ -101,7 +102,7 @@ class SilverTransform(Strategy):
             )
         return df
 
-    def clean_postal_code(self, df, col_name):
+    def clean_postal_code(self, df: Any, col_name: str) -> Any:
         """Remove non-alphanumeric characters
 
         Args:
@@ -115,7 +116,7 @@ class SilverTransform(Strategy):
             col_name, regexp_replace(col(col_name), "[^0-9A-Za-z]", "")
         )
 
-    def deduplicate(self, df, subset_cols):
+    def deduplicate(self, df: Any, subset_cols: list[str]) -> Any:
         """Drop duplicate rows based on business keys.
 
         Args:
@@ -127,7 +128,7 @@ class SilverTransform(Strategy):
         """
         return df.dropDuplicates(subset=subset_cols)
 
-    def execute(self, df, context):
+    def execute(self, df: Any, context: dict[str, Any]) -> Any:
         """Run the complete silver transformation pipeline.
 
         Args:

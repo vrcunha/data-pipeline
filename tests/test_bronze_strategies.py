@@ -10,7 +10,7 @@ from data_pipeline.strategies import (
 )
 
 
-def test_bronze_extract_get_total_pages():
+def test_bronze_extract_get_total_pages() -> None:
     """Ensure pagination size is computed from metadata."""
     strategy = BronzeAsyncAPIExtract()
     with patch(
@@ -22,7 +22,7 @@ def test_bronze_extract_get_total_pages():
     assert total_pages == 3
 
 
-def test_bronze_extract_execute():
+def test_bronze_extract_execute() -> None:
     """Ensure execute orchestrates async extraction flow."""
     strategy = BronzeAsyncAPIExtract()
     context = {
@@ -48,7 +48,7 @@ def test_bronze_extract_execute():
     loop.run_until_complete.assert_called_once_with(expected)
 
 
-def test_bronze_transform_returns_input():
+def test_bronze_transform_returns_input() -> None:
     """Ensure bronze transform is pass-through."""
     strategy = BronzeTransform()
     data = [{"id": "1"}]
@@ -58,7 +58,7 @@ def test_bronze_transform_returns_input():
     assert result is data
 
 
-def test_bronze_load_puts_file_on_s3():
+def test_bronze_load_puts_file_on_s3() -> None:
     """Ensure bronze load writes one JSON object to storage."""
     strategy = BronzeLoad()
     s3_mock = MagicMock()
@@ -78,7 +78,7 @@ def test_bronze_load_puts_file_on_s3():
     assert kwargs["Key"].startswith("openbrewerydb/2026-02-26/")
 
 
-def test_bronze_quality_validate_noop():
+def test_bronze_quality_validate_noop() -> None:
     """Ensure current bronze quality validator does not raise."""
     strategy = BronzeQuality()
     data = {

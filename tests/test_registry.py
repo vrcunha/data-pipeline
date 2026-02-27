@@ -11,7 +11,7 @@ from data_pipeline.strategies import (
 )
 
 
-def test_registry_returns_bundle_for_layer():
+def test_registry_returns_bundle_for_layer() -> None:
     """Ensure known layer returns the expected strategy implementations."""
     bundle = StrategyRegistry.get("silver")
     assert isinstance(bundle.extract, SilverExtract)
@@ -20,7 +20,7 @@ def test_registry_returns_bundle_for_layer():
     assert isinstance(bundle.quality, SilverQuality)
 
 
-def test_registry_rejects_invalid_layer():
+def test_registry_rejects_invalid_layer() -> None:
     """Ensure unsupported layers raise `ValueError`."""
     with pytest.raises(ValueError):
         StrategyRegistry.get("platinum")

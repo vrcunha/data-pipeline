@@ -1,5 +1,7 @@
 """Core ETL orchestration logic."""
 
+from typing import Any
+
 from data_pipeline.shared.logger import StructuredLogger
 from data_pipeline.strategies.interfaces import DataQualityStrategy, Strategy
 
@@ -31,7 +33,7 @@ class ETL:
         self.logger = StructuredLogger(f"etl-{job_name}")
         self.job_name = job_name
 
-    def run(self, context: dict):
+    def run(self, context: dict[str, Any]) -> None:
         """Execute the ETL pipeline.
 
         Args:

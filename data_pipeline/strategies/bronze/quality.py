@@ -1,5 +1,7 @@
 """Bronze data quality strategy."""
 
+from typing import Any
+
 from data_pipeline.shared.logger import StructuredLogger
 from data_pipeline.strategies.interfaces import DataQualityStrategy
 
@@ -7,11 +9,13 @@ from data_pipeline.strategies.interfaces import DataQualityStrategy
 class BronzeQuality(DataQualityStrategy):
     """Placeholder for bronze quality rules."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-bronze-quality")
 
-    def validate(self, data, context: dict) -> None:
+    def validate(
+        self, data: list[dict[str, Any]], context: dict[str, Any]
+    ) -> None:
         """Validate bronze data.
 
         Args:

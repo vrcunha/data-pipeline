@@ -4,6 +4,7 @@ import json
 import os
 import uuid
 from datetime import date
+from typing import Any
 
 import boto3
 from botocore.config import Config
@@ -16,11 +17,11 @@ load_dotenv()
 
 
 class BronzeLoad(Strategy):
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize strategy logger."""
         self.logger = StructuredLogger("strategy-bronze-load")
 
-    def s3_client(self):
+    def s3_client(self) -> Any:
         """Create an S3-compatible client for MinIO/AWS endpoints."""
         return boto3.client(
             "s3",
@@ -31,7 +32,9 @@ class BronzeLoad(Strategy):
             region_name=os.getenv("AWS_S3_REGION"),
         )
 
-    def execute(self, data, context):
+    def execute(
+        self, data: list[dict[str, Any]], context: dict[str, Any]
+    ) -> None:
         """Persist extracted data as a JSON file in the bronze bucket.
 
         Args:

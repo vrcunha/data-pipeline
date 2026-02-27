@@ -2,31 +2,32 @@
 
 import sys
 import types
+from typing import Any
 
 
 class _Expr:
     """Minimal expression stub used by fake Spark functions."""
 
-    def __init__(self, value=None):
+    def __init__(self, value=None) -> Any:
         self.value = value
 
-    def cast(self, _dtype):
+    def cast(self, _dtype) -> Any:
         """Mimic Spark cast API and keep chainability."""
         return self
 
-    def isNull(self):
+    def isNull(self) -> Any:
         """Mimic Spark isNull API and keep chainability."""
         return self
 
-    def rlike(self, _pattern):
+    def rlike(self, _pattern) -> Any:
         """Mimic Spark rlike API and keep chainability."""
         return self
 
-    def __eq__(self, _other):
+    def __eq__(self, _other) -> Any:
         """Mimic Spark column comparison expressions."""
         return self
 
-    def __or__(self, _other):
+    def __or__(self, _other) -> Any:
         """Mimic Spark boolean expression OR operator."""
         return self
 
@@ -34,11 +35,11 @@ class _Expr:
 class _WhenExpr:
     """Minimal `when` expression chain stub."""
 
-    def when(self, _condition, _value):
+    def when(self, _condition, _value) -> Any:
         """Mimic chained `when` API."""
         return self
 
-    def otherwise(self, _value):
+    def otherwise(self, _value) -> Any:
         """Mimic terminal `otherwise` API."""
         return _Expr()
 
@@ -46,7 +47,7 @@ class _WhenExpr:
 class _CountExpr:
     """Minimal count expression stub."""
 
-    def alias(self, _name):
+    def alias(self, _name) -> Any:
         """Mimic Spark alias API."""
         return _Expr()
 
@@ -64,14 +65,17 @@ def _install_pyspark_stub() -> None:
     class SparkSession:  # pragma: no cover - stub only
         pass
 
+    class DataFrame:  # pragma: no cover - stub only
+        pass
+
     class StructField:
-        def __init__(self, name, data_type, nullable):
+        def __init__(self, name, data_type, nullable) -> Any:
             self.name = name
             self.dataType = data_type
             self.nullable = nullable
 
     class StructType:
-        def __init__(self, fields):
+        def __init__(self, fields) -> Any:
             self.fields = fields
 
     class StringType:
@@ -83,31 +87,41 @@ def _install_pyspark_stub() -> None:
     class LongType:
         pass
 
-    def col(name):
+    def col(name) -> Any:
         return _Expr(name)
 
-    def trim(expr):
+    def trim(expr) -> Any:
         return expr
 
-    def initcap(expr):
+    def initcap(expr) -> Any:
         return expr
 
-    def regexp_replace(expr, _pattern, _replacement):
+    def regexp_replace(expr, _pattern, _replacement) -> Any:
         return expr
 
-    def lit(value):
+    def lit(value) -> Any:
         return _Expr(value)
 
-    def to_date(expr):
+    def to_date(expr) -> Any:
         return expr
 
-    def count(_expr):
+    def count(_expr) -> Any:
         return _CountExpr()
 
-    def when(_condition, _value):
+    def when(_condition, _value) -> Any:
         return _WhenExpr()
 
+    def coalesce(*_exprs) -> Any:
+        return _Expr()
+
+    def concat_ws(_sep, *_exprs) -> Any:
+        return _Expr()
+
+    def sha2(_expr, _num_bits) -> Any:
+        return _Expr()
+
     sql.SparkSession = SparkSession
+    sql.DataFrame = DataFrame
     functions.col = col
     functions.trim = trim
     functions.initcap = initcap
@@ -116,6 +130,9 @@ def _install_pyspark_stub() -> None:
     functions.to_date = to_date
     functions.count = count
     functions.when = when
+    functions.coalesce = coalesce
+    functions.concat_ws = concat_ws
+    functions.sha2 = sha2
     types_mod.StructType = StructType
     types_mod.StructField = StructField
     types_mod.StringType = StringType
@@ -146,47 +163,53 @@ def _install_pydeequ_stub() -> None:
         String = "String"
 
     class Check:
-        def __init__(self, spark, level, name):
+        def __init__(self, spark, level, name) -> Any:
             self.spark = spark
             self.level = level
             self.name = name
 
-        def hasSize(self, _fn):
+        def hasSize(self, _fn) -> Any:
             return self
 
-        def isComplete(self, _column):
+        def isComplete(self, _column) -> Any:
             return self
 
-        def hasUniqueness(self, _columns, _fn):
+        def hasUniqueness(self, _columns, _fn) -> Any:
             return self
 
-        def hasDataType(self, _column, _dtype, _fn):
+        def hasDataType(self, _column, _dtype, _fn) -> Any:
             return self
 
-        def isNonNegative(self, _column):
+        def isNonNegative(self, _column) -> Any:
+            return self
+
+        def isContainedIn(self, _column, _allowed) -> Any:
+            return self
+
+        def satisfies(self, _constraint, _name) -> Any:
             return self
 
     class _Result:
         status = "Success"
 
     class VerificationSuite:
-        def __init__(self, spark):
+        def __init__(self, spark) -> Any:
             self.spark = spark
 
-        def onData(self, _data):
+        def onData(self, _data) -> Any:
             return self
 
-        def addCheck(self, _check):
+        def addCheck(self, _check) -> Any:
             return self
 
-        def run(self):
+        def run(self) -> Any:
             return _Result()
 
     class VerificationResult:
         @staticmethod
-        def checkResultsAsDataFrame(_spark, _result):
+        def checkResultsAsDataFrame(_spark, _result) -> Any:
             class _ResultDataFrame:
-                def show(self, truncate=False):
+                def show(self, truncate=False) -> Any:
                     return None
 
             return _ResultDataFrame()
@@ -212,25 +235,25 @@ def _install_delta_stub() -> None:
 
     class DeltaTable:
         @staticmethod
-        def isDeltaTable(_spark, _path):
+        def isDeltaTable(_spark, _path) -> Any:
             return False
 
         @staticmethod
-        def forPath(_spark, _path):
+        def forPath(_spark, _path) -> Any:
             class _Target:
-                def alias(self, _name):
+                def alias(self, _name) -> Any:
                     return self
 
-                def merge(self, _source, _condition):
+                def merge(self, _source, _condition) -> Any:
                     return self
 
-                def whenMatchedUpdateAll(self):
+                def whenMatchedUpdateAll(self) -> Any:
                     return self
 
-                def whenNotMatchedInsertAll(self):
+                def whenNotMatchedInsertAll(self) -> Any:
                     return self
 
-                def execute(self):
+                def execute(self) -> Any:
                     return None
 
             return _Target()
@@ -256,7 +279,7 @@ def _install_misc_stubs() -> None:
             async def __aexit__(self, exc_type, exc, tb):
                 return False
 
-            def get(self, *args, **kwargs):
+            def get(self, *args, **kwargs) -> Any:
                 class _Response:
                     async def __aenter__(self):
                         return self
@@ -264,7 +287,7 @@ def _install_misc_stubs() -> None:
                     async def __aexit__(self, exc_type, exc, tb):
                         return False
 
-                    def raise_for_status(self):
+                    def raise_for_status(self) -> Any:
                         return None
 
                     async def json(self):
@@ -279,8 +302,8 @@ def _install_misc_stubs() -> None:
     if "backoff" not in sys.modules:
         backoff = types.ModuleType("backoff")
 
-        def on_exception(*args, **kwargs):
-            def _decorator(fn):
+        def on_exception(*args, **kwargs) -> Any:
+            def _decorator(fn) -> Any:
                 return fn
 
             return _decorator
@@ -294,10 +317,10 @@ def _install_misc_stubs() -> None:
         requests = types.ModuleType("requests")
 
         class _Resp:
-            def json(self):
+            def json(self) -> Any:
                 return {"total": 0}
 
-        def get(*args, **kwargs):
+        def get(*args, **kwargs) -> Any:
             return _Resp()
 
         requests.get = get
@@ -306,9 +329,9 @@ def _install_misc_stubs() -> None:
     if "boto3" not in sys.modules:
         boto3 = types.ModuleType("boto3")
 
-        def client(*args, **kwargs):
+        def client(*args, **kwargs) -> Any:
             class _Client:
-                def put_object(self, **kwargs):
+                def put_object(self, **kwargs) -> Any:
                     return None
 
             return _Client()
@@ -321,7 +344,7 @@ def _install_misc_stubs() -> None:
         config_mod = types.ModuleType("botocore.config")
 
         class Config:
-            def __init__(self, **kwargs):
+            def __init__(self, **kwargs) -> Any:
                 self.kwargs = kwargs
 
         config_mod.Config = Config
@@ -331,7 +354,7 @@ def _install_misc_stubs() -> None:
     if "dotenv" not in sys.modules:
         dotenv = types.ModuleType("dotenv")
 
-        def load_dotenv(*args, **kwargs):
+        def load_dotenv(*args, **kwargs) -> Any:
             return None
 
         dotenv.load_dotenv = load_dotenv

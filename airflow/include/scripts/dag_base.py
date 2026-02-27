@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Mapping
+from typing import Any, Mapping
 
 import requests
 from airflow.exceptions import AirflowException
@@ -60,7 +60,7 @@ def infra_health_check(
 
 
 def task_failure_discord_callback(
-    context: dict,
+    context: dict[str, Any],
     webhook_url: str | None = None,
 ) -> None:
     """Send Discord alert when a task fails."""
@@ -84,11 +84,11 @@ def task_failure_discord_callback(
 
 
 def sla_miss_discord_callback(
-    dag,
-    task_list,
-    blocking_task_list,
-    slas,
-    blocking_tis,
+    dag: Any,
+    task_list: str,
+    blocking_task_list: str,
+    slas: Any,
+    blocking_tis: Any,
     webhook_url: str | None = None,
 ) -> None:
     """Send warning and Discord alert when SLA misses are reported."""

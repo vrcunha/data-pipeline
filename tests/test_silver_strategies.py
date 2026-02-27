@@ -1,5 +1,8 @@
 """Unit tests for silver strategies."""
 
+from __future__ import annotations
+
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +15,7 @@ from data_pipeline.strategies import (
 )
 
 
-def test_silver_extract_reads_json_from_s3a():
+def test_silver_extract_reads_json_from_s3a() -> None:
     """Ensure silver extract reads from expected S3 path."""
     strategy = SilverExtract()
     df_mock = MagicMock()
@@ -35,7 +38,7 @@ def test_silver_extract_reads_json_from_s3a():
     assert result is df_mock
 
 
-def test_silver_transform_clean_postal_code_calls_with_column():
+def test_silver_transform_clean_postal_code_calls_with_column() -> None:
     """Ensure postal code cleanup applies transformation on target column."""
     strategy = SilverTransform()
     df_mock = MagicMock()
@@ -47,7 +50,7 @@ def test_silver_transform_clean_postal_code_calls_with_column():
     assert args[0] == "postal_code"
 
 
-def test_silver_transform_execute_runs_successfully():
+def test_silver_transform_execute_runs_successfully() -> None:
     """Ensure full silver transform pipeline executes without exceptions."""
     strategy = SilverTransform()
     df_mock = MagicMock()
@@ -64,7 +67,7 @@ def test_silver_transform_execute_runs_successfully():
     df_mock.withColumn.assert_called()
 
 
-def test_silver_load_writes_delta_partitioned():
+def test_silver_load_writes_delta_partitioned() -> None:
     """Ensure silver load writes partitioned Delta output."""
     strategy = SilverLoad()
     writer = MagicMock()
@@ -85,21 +88,21 @@ def test_silver_load_writes_delta_partitioned():
     writer.save.assert_called_once_with("s3a://silver/openbrewerydb/")
 
 
-def test_silver_quality_raises_on_failed_checks():
+def test_silver_quality_raises_on_failed_checks() -> None:
     """Ensure silver quality raises when checks report failure."""
     strategy = SilverQuality()
 
     class _FailedSuite:
-        def __init__(self, spark):
+        def __init__(self, spark) -> None:
             self.spark = spark
 
-        def onData(self, data):
+        def onData(self, data: Any) -> "_FailedSuite":
             return self
 
-        def addCheck(self, check):
+        def addCheck(self, check: Any) -> "_FailedSuite":
             return self
 
-        def run(self):
+        def run(self) -> Any:
             class _Result:
                 status = "Error"
 

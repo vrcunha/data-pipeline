@@ -32,7 +32,7 @@ class StrategyBundle:
 class StrategyRegistry:
     """Resolve strategy bundles by pipeline layer name."""
 
-    _registry = {
+    _registry: dict[str, StrategyBundle] = {
         "bronze": StrategyBundle(
             extract=BronzeAsyncAPIExtract(),
             transform=BronzeTransform(),
