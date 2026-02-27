@@ -1,0 +1,286 @@
+x-spark-common: &spark-common
+  build:
+    context: ./infra/spark/
+    dockerfile: spark.Dockerfile
+  volumes:
+    - ./jobs:/opt/spark/jobs
+    - ./data_pipeline:/opt/spark/jobs/data_pipeline
+  networks:
+    - lake-network
+
+x-airflow-common: &airflow-common
+  build:
+    context: ./infra/airflow/
+    dockerfile: airflow.Dockerfile
+  env_file:
+    - ./infra/airflow/airflow.env
+  environment:
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_AIRFLOW_USER}:${POSTGRES_AIRFLOW_PASSWORD}@postgres-airflow:5432/${POSTGRES_AIRFLOW_DB}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW_VAR_DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
+    AIRFLOW_VAR_AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
+    AIRFLOW_VAR_AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY}
+    AIRFLOW_VAR_AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY}
+    AIRFLOW_VAR_AWS_S3_REGION: ${AWS_S3_REGION}
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./jobs:/opt/spark/jobs
+    - ./data_pipeline:/opt/spark/jobs/data_pipeline
+    - /var/run/docker.sock:/var/run/docker.sock
+  restart: always
+  group_add:
+      - 1001
+  depends_on:
+    postgres-airflow:
+        condition: service_healthy
+  networks:
+    - lake-network
+
+services:
+  bronze_image:
+    build:
+      context: .
+      dockerfile: ./infra/bronze_container/bronze.Dockerfile
+    networks:
+    - lake-network
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./bucket_data/minio:/data
+    entrypoint: >
+      /bin/sh -c "
+      minio server /data --console-address ':9001' &
+      sleep 5;
+      mc alias set minio http://minio:9000 ${MINIO_USER} ${MINIO_PASSWORD};
+      mc mb minio/bronze --ignore-existing;
+      mc mb minio/silver --ignore-existing;
+      mc mb minio/gold --ignore-existing;
+      mc mb minio/warehouse --ignore-existing;
+      mc mb minio/scripts --ignore-existing;
+      echo 'Buckets created successfully';
+      tail -f /dev/null
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - lake-network
+
+  spark-master:
+    <<: *spark-common
+    container_name: spark-master
+    command: bash -c "/opt/spark/sbin/start-master.sh && tail -f /dev/null"
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_PORT=${SPARK_MASTER_PORT}
+      - SPARK_MASTER_WEBUI_PORT=${SPARK_MASTER_WEBUI_PORT}
+      - SPARK_RPC_AUTHENTICATION_ENABLED=${SPARK_RPC_AUTHENTICATION_ENABLED}
+      - SPARK_RPC_ENCRYPTION_ENABLED=${SPARK_RPC_ENCRYPTION_ENABLED}
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=${SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED}
+      - SPARK_SSL_ENABLED=${SPARK_SSL_ENABLED}
+      - AWS_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${AWS_S3_SECRET_KEY}
+      - AWS_REGION=${AWS_S3_REGION}
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/json/"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  spark-worker:
+    <<: *spark-common
+    container_name: spark-worker
+    command: bash -c "/opt/spark/sbin/start-worker.sh spark://spark-master:7077 && tail -f /dev/null"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=${SPARK_MASTER_URL}
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES}
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY}
+      - AWS_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${AWS_S3_SECRET_KEY}
+      - AWS_REGION=${AWS_S3_REGION}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres-airflow:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${POSTGRES_AIRFLOW_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_AIRFLOW_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_AIRFLOW_DB}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - postgres_airflow:/var/lib/postgresql/data
+    networks:
+      - lake-network
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow-init
+    user: "0:0"
+    entrypoint: /bin/bash
+    restart: no
+    command:
+      - -c
+      - |
+        echo "Criando diretórios..."
+        mkdir -p /opt/airflow/dags /opt/airflow/logs /opt/airflow/plugins /opt/airflow/config
+        
+        echo "Ajustando permissões..."
+        chown -R ${AIRFLOW_UID}:${AIRFLOW_GID} /opt/airflow/dags /opt/airflow/logs /opt/airflow/plugins /opt/airflow/config
+        chmod -R 775 /opt/airflow/dags /opt/airflow/logs /opt/airflow/plugins /opt/airflow/config
+        
+        echo "Inicializando banco..."
+        airflow db migrate
+        
+        echo "Criando usuário admin..."
+        airflow users create \
+          --username ${AIRFLOW_USER} \
+          --password ${AIRFLOW_PASSWORD} \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@email.com
+        
+        echo "Init concluído."
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: airflow-webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      airflow-init:
+          condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --local"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      airflow-init:
+          condition: service_completed_successfully
+
+  postgres-metastore:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_HIVE_DB}
+      POSTGRES_USER: ${POSTGRES_HIVE_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_HIVE_PASSWORD}
+    ports:
+      - "5436:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "metastore"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - postgres_hive:/var/lib/postgresql/data
+    networks:
+      - lake-network
+
+  metastore:
+    build:
+      context: ./infra/hive/
+      dockerfile: hive.Dockerfile
+    container_name: hive-metastore
+    depends_on:
+      - postgres-metastore
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      SERVICE_OPTS: >-
+        -Djavax.jdo.option.ConnectionDriverName=${HIVE_DRIVER_NAME}
+        -Djavax.jdo.option.ConnectionURL=${HIVE_URL}
+        -Djavax.jdo.option.ConnectionUserName=${HIVE_USERNAME}
+        -Djavax.jdo.option.ConnectionPassword=${HIVE_PASSWORD}
+    command: >
+      bash -c "
+        /opt/hive/bin/schematool -dbType postgres -initSchema &&
+        /opt/hive/bin/hive --service metastore
+      "
+    volumes:
+    - ./infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml
+    ports:
+      - "9083:9083"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9083"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - lake-network
+
+  trino:
+    image: trinodb/trino:455
+    environment:
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+      - AWS_S3_ACCESS_KEY=${AWS_S3_ACCESS_KEY}
+      - AWS_S3_SECRET_KEY=${AWS_S3_SECRET_KEY}
+      - AWS_S3_REGION=${AWS_S3_REGION}
+    ports:
+      - "8085:8080"
+    depends_on:
+      - metastore
+      - minio
+    volumes:
+      - ./infra/trino/catalog:/etc/trino/catalog
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - lake-network
+
+networks:
+  lake-network:
+    driver: bridge
+
+volumes:
+  postgres_airflow:
+  postgres_hive:
+  bucket_data:
+  spark_jobs:
