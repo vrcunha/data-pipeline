@@ -156,6 +156,29 @@ Benefits include:
 In local mode, Hive Metastore is used as the catalog due to broad adoption and straightforward integration. In cloud scenarios, alternatives such as AWS Glue Catalog or Unity Catalog are common.
 
 Trino is used as the SQL query engine to simplify analytical access across datasets through federated SQL interfaces.
+Trino also supports:
+
+- Catalog-level access control
+- Schema-level permissions
+- Table-level access
+- Pluggable authentication providers
+
+This enables:
+
+- Environment segmentation
+- Analyst vs Engineer permission separation
+- Controlled exposure of Gold vs Silver layers
+
+## Layer-Based Governance Strategy
+
+The Medallion architecture naturally supports governance boundaries:
+
+| Layer   | Access Level |
+|----------|-------------|
+| Bronze  | Data Engineering only |
+| Silver  | DE / ML / DS teams |
+| Gold    | Broad analytical access |
+
 
 ## Maintenance Considerations
 
